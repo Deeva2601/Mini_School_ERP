@@ -4,6 +4,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
+const path = require("path");
 const connectDatabase = require("./config/database");
 const studentRoutes = require("./routes/studentRoutes");
 const authRoutes = require("./routes/authRoutes");
@@ -42,6 +43,15 @@ app.get("/api/health", (req, res) => {
     message: "Server is healthy"
   });
 });
+
+if (process.env.NODE_ENV === "production") {
+  const clientBuildPath = path.join(__dirname, "../../client/dist");
+
+  app.use(express.static(clientBuildPath));
+  app.get(/^(?!\/api\/).*/, (req, res) => {
+    res.sendFile(path.join(clientBuildPath, "index.html"));
+  });
+}
 
 const startServer = async () => {
   await connectDatabase();

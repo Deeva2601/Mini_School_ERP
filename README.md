@@ -62,6 +62,18 @@ This stack keeps the CRUD-heavy app straightforward to run locally while preserv
 
    Open `http://localhost:5173`. Vite proxies `/api` requests to `http://localhost:5000`. For a separately hosted API, set `VITE_API_URL` to its base URL before building the frontend.
 
+## Deploy to Render
+
+The included `render.yaml` deploys the API and built React client together as one web service. Create a MongoDB Atlas database, allow its network access from the Render service's outbound IP addresses, then create a Render Blueprint from this repository and set `MONGODB_URI` to the Atlas connection string in Render's environment settings. Avoid leaving a broad `0.0.0.0/0` network rule enabled. Render generates `JWT_SECRET` automatically.
+
+After the service is live, open its Render Shell and create the initial admin using values you choose:
+
+```sh
+ADMIN_NAME="School Admin" ADMIN_EMAIL="admin@school.com" ADMIN_PASSWORD="choose-a-private-password" npm run create-admin --prefix server
+```
+
+Use that email and password to sign in. Create teacher accounts from the Admin dashboard and set each teacher's initial password there. Student accounts are optional; to enable one, add the student with an email and login password. Do not reuse the example passwords or commit credentials.
+
 ## Features
 
 - Email/password login for Admin, Teacher, and optional Student roles.
