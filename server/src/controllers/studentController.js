@@ -79,11 +79,24 @@ const createStudent = async (req, res) => {
       }
     }
 
+    const schoolClass = await Class.findOne({
+      className: className.trim(),
+      section: section.trim().toUpperCase(),
+    }).select("_id");
+
+    if (!schoolClass) {
+      return res.status(400).json({
+        success: false,
+        message: "Select an existing class and section",
+      });
+    }
+
     createdStudent = await Student.create({
       name: name.trim(),
       rollNumber: String(rollNumber).trim(),
       className: className.trim(),
       section: section.trim().toUpperCase(),
+      schoolClass: schoolClass._id,
       email: normalizedEmail,
       guardianContact: guardianContact.trim(),
     });
@@ -275,6 +288,39 @@ const updateStudent = async (req, res) => {
       guardianContact,
     } = req.body;
 
+    const nextClassName =
+      className === undefined ? student.className : className;
+    const nextSection =
+      section === undefined ? student.section : section;
+
+    if (
+      typeof nextClassName !== "string" ||
+      !nextClassName.trim() ||
+      typeof nextSection !== "string" ||
+      !nextSection.trim()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Class and section cannot be empty",
+      });
+    }
+
+    const schoolClass = await Class.findOne({
+      className: nextClassName.trim(),
+      section: nextSection.trim().toUpperCase(),
+    }).select("_id");
+
+    if (!schoolClass) {
+      return res.status(400).json({
+        success: false,
+        message: "Select an existing class and section",
+      });
+    }
+
+    student.className = nextClassName.trim();
+    student.section = nextSection.trim().toUpperCase();
+    student.schoolClass = schoolClass._id;
+
     if (name !== undefined) {
       if (typeof name !== "string" || !name.trim()) {
         return res.status(400).json({
@@ -293,26 +339,6 @@ const updateStudent = async (req, res) => {
         });
       }
       student.rollNumber = String(rollNumber).trim();
-    }
-
-    if (className !== undefined) {
-      if (typeof className !== "string" || !className.trim()) {
-        return res.status(400).json({
-          success: false,
-          message: "Class cannot be empty",
-        });
-      }
-      student.className = className.trim();
-    }
-
-    if (section !== undefined) {
-      if (typeof section !== "string" || !section.trim()) {
-        return res.status(400).json({
-          success: false,
-          message: "Section cannot be empty",
-        });
-      }
-      student.section = section.trim().toUpperCase();
     }
 
     if (email !== undefined) {

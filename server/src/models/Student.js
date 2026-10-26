@@ -28,6 +28,12 @@ const studentSchema = new mongoose.Schema(
       trim: true,
     },
 
+    schoolClass: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Class",
+      default: null,
+    },
+
     email: {
       type: String,
       lowercase: true,

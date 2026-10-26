@@ -2,33 +2,45 @@
 require("dotenv").config();
 
 const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
 const User = require("./models/User");
 
-async function resetAdminPassword() {
+async function createAdmin() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log("MongoDB connected!");
+    const { ADMIN_NAME, ADMIN_EMAIL, ADMIN_PASSWORD, MONGODB_URI } = process.env;
 
-    const email = "admin@school.com";
-    const newPassword = "Admin@12345";
-
-    const admin = await User.findOne({ email }).select("+password");
-
-    if (!admin) {
-      console.log("Admin account not found.");
-      return;
+    if (!ADMIN_NAME || !ADMIN_EMAIL || !ADMIN_PASSWORD || !MONGODB_URI) {
+      throw new Error(
+        "Set ADMIN_NAME, ADMIN_EMAIL, ADMIN_PASSWORD, and MONGODB_URI before creating an admin"
+      );
     }
 
-    admin.password = newPassword;
-    await admin.save();
+    if (ADMIN_PASSWORD.length < 6) {
+      throw new Error("ADMIN_PASSWORD must contain at least 6 characters");
+    }
 
-    console.log("Admin password reset successfully!");
+    await mongoose.connect(process.env.MONGODB_URI);
+
+    const email = ADMIN_EMAIL.trim().toLowerCase();
+
+    if (await User.exists({ email })) {
+      throw new Error(`An account already exists for ${email}`);
+    }
+
+    await User.create({
+      name: ADMIN_NAME.trim(),
+      email,
+      password: ADMIN_PASSWORD,
+      role: "admin",
+    });
+    console.log(`Admin account created for ${email}`);
   } catch (error) {
-    console.error("Error:", error.message);
+    console.error("Admin creation failed:", error.message);
+    process.exitCode = 1;
   } finally {
-    await mongoose.disconnect();
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.disconnect();
+    }
   }
 }
 
-resetAdminPassword();
+createAdmin();

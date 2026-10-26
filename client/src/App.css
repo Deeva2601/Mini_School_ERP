@@ -494,6 +494,23 @@ button {
   background: #e8a43c;
 }
 
+.class-attendance-summary {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #edf0f5;
+}
+
+.class-attendance-summary h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.class-attendance-summary p {
+  margin: 5px 0;
+  color: #6c7a91;
+  font-size: 12px;
+}
+
 .placeholder-panel {
   margin-top: 30px;
   padding: 55px 25px;

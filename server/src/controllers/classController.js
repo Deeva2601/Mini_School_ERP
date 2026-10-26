@@ -1,6 +1,7 @@
 
 const Class = require("../models/Class");
 const User = require("../models/User");
+const Student = require("../models/Student");
 const mongoose = require("mongoose");
 
 const validId = (id) => mongoose.isValidObjectId(id);
@@ -177,6 +178,8 @@ const updateClass = async (req, res) => {
       });
     }
 
+    const previousName = existingClass.className;
+    const previousSection = existingClass.section;
     const { className, section, classTeacher } = req.body;
 
     if (className !== undefined) {
@@ -207,6 +210,28 @@ const updateClass = async (req, res) => {
     }
 
     await existingClass.save();
+
+    if (
+      previousName !== existingClass.className ||
+      previousSection !== existingClass.section
+    ) {
+      await Student.updateMany(
+        {
+          $or: [
+            { schoolClass: existingClass._id },
+            { className: previousName, section: previousSection },
+          ],
+        },
+        {
+          $set: {
+            className: existingClass.className,
+            section: existingClass.section,
+            schoolClass: existingClass._id,
+          },
+        }
+      );
+    }
+
     await existingClass.populate("classTeacher", "name email phone subject");
 
     return res.status(200).json({
@@ -247,6 +272,26 @@ const deleteClass = async (req, res) => {
         message: "Class not found",
       });
     }
+
+    const studentFilter = {
+      $or: [
+        { schoolClass: existingClass._id },
+        { className: existingClass.className, section: existingClass.section },
+      ],
+    };
+    const activeStudentCount = await Student.countDocuments({
+      ...studentFilter,
+      isActive: true,
+    });
+
+    if (activeStudentCount > 0) {
+      return res.status(409).json({
+        success: false,
+        message: "Reassign or remove active students before deleting this class",
+      });
+    }
+
+    await Student.updateMany(studentFilter, { $set: { schoolClass: null } });
 
     if (existingClass.classTeacher) {
       await User.updateOne(

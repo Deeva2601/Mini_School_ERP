@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
 
-const API = "http://localhost:5000";
+const API = import.meta.env.VITE_API_URL || "";
 
 const initialStats = {
   totalTeachers: 0,
@@ -12,6 +12,7 @@ const initialStats = {
   presentToday: 0,
   absentToday: 0,
   lateToday: 0,
+  classAttendance: [],
 };
 
 const adminMenuItems = [
@@ -1342,8 +1343,30 @@ if (!user) {
                   </div>
 
                   <p className="muted">
-                    Attendance marked: {stats.todayAttendance} record(s) today.
+                    Present today: {stats.presentToday} of {stats.totalStudents} students
+                    {" · "}Attendance marked: {stats.todayAttendance} record(s).
                   </p>
+                  {stats.classAttendance?.length > 0 && (
+                    <div className="class-attendance-summary">
+                      <h3>By class</h3>
+                      {stats.classAttendance.map((item) => (
+                        <p key={`${item.className}-${item.section}`}>
+                          <strong>{item.className} - {item.section}:</strong>{" "}
+                          {item.presentToday} of {item.totalStudents} present
+                          {" · "}{item.absentToday} absent
+                          {" · "}{item.lateToday} late
+                          {" · Attendance: "}
+                          {item.totalStudents === 0
+                            ? "No students"
+                            : item.pendingToday === 0
+                              ? "Marked for all students"
+                              : item.markedToday === 0
+                                ? "Not marked"
+                                : `Partially marked (${item.markedToday}/${item.totalStudents})`}
+                        </p>
+                      ))}
+                    </div>
+                  )}
                 </section>
               </>
             )}
@@ -1637,7 +1660,7 @@ if (!user) {
 
                     {!editingStudentId && (
                       <p className="muted">
-                        A student login account is created only if the backend supports loginPassword.
+                        A student login account is created when you set a password.
                       </p>
                     )}
 
@@ -1747,8 +1770,14 @@ if (!user) {
             {isStudent ? (
               <section className="management-panel">
                 <div className="form-grid">
-                  <Field label="Attendance date">
-                    <input type="date" value={attendanceDate} onChange={(event) => setAttendanceDate(event.target.value)} required />
+                  <Field label={attendanceMode === "mark" ? "Attendance date (today)" : "Attendance date"}>
+                    <input
+                      type="date"
+                      value={attendanceDate}
+                      onChange={(event) => setAttendanceDate(event.target.value)}
+                      disabled={attendanceMode === "mark"}
+                      required
+                    />
                   </Field>
                 </div>
 
@@ -1805,7 +1834,10 @@ if (!user) {
                   </div>
 
                   <div className="form-actions">
-                    <button type="button" className={attendanceMode === "mark" ? "primary-button" : "secondary-button"} onClick={() => setAttendanceMode("mark")}>
+                    <button type="button" className={attendanceMode === "mark" ? "primary-button" : "secondary-button"} onClick={() => {
+                      setAttendanceDate(todayString());
+                      setAttendanceMode("mark");
+                    }}>
                       Mark attendance
                     </button>
                     <button type="button" className={attendanceMode === "history" ? "primary-button" : "secondary-button"} onClick={() => setAttendanceMode("history")}>
