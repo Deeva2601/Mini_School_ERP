@@ -34,16 +34,6 @@ const getDashboardStats = async (req, res) => {
       User.countDocuments({ role: "teacher" }),
       Student.countDocuments({ isActive: true }),
       Class.countDocuments({}),
-      Class.find({}).select("className section").sort({ className: 1, section: 1 }),
-      Student.aggregate([
-        { $match: { isActive: true } },
-        {
-          $group: {
-            _id: { className: "$className", section: "$section" },
-            count: { $sum: 1 },
-          },
-        },
-      ]),
       Attendance.aggregate([
         {
           $match: {
@@ -53,6 +43,16 @@ const getDashboardStats = async (req, res) => {
         {
           $group: {
             _id: "$status",
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+      Class.find({}).select("className section").sort({ className: 1, section: 1 }),
+      Student.aggregate([
+        { $match: { isActive: true } },
+        {
+          $group: {
+            _id: { className: "$className", section: "$section" },
             count: { $sum: 1 },
           },
         },
@@ -129,11 +129,18 @@ const getDashboardStats = async (req, res) => {
         absent: 0,
         late: 0,
       };
+      const totalForClass = studentCountByClass.get(key) || 0;
+      const markedToday =
+        summaryForClass.present +
+        summaryForClass.absent +
+        summaryForClass.late;
 
       return {
         className: schoolClass.className,
         section: schoolClass.section,
-        totalStudents: studentCountByClass.get(key) || 0,
+        totalStudents: totalForClass,
+        markedToday,
+        pendingToday: Math.max(0, totalForClass - markedToday),
         presentToday: summaryForClass.present,
         absentToday: summaryForClass.absent,
         lateToday: summaryForClass.late,

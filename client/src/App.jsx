@@ -1355,6 +1355,14 @@ if (!user) {
                           {item.presentToday} of {item.totalStudents} present
                           {" · "}{item.absentToday} absent
                           {" · "}{item.lateToday} late
+                          {" · Attendance: "}
+                          {item.totalStudents === 0
+                            ? "No students"
+                            : item.pendingToday === 0
+                              ? "Marked for all students"
+                              : item.markedToday === 0
+                                ? "Not marked"
+                                : `Partially marked (${item.markedToday}/${item.totalStudents})`}
                         </p>
                       ))}
                     </div>
