@@ -7,14 +7,12 @@ const login = async (req, res) => {
   try {
     const { email, password, role } = req.body;
 
-const allowedRoles = ["admin", "teacher", "student"];
-
-if (!["admin", "teacher", "student"].includes(role)) {
-  return res.status(400).json({
-    success: false,
-    message: "Please select a valid login role.",
-  });
-}
+    if (!["admin", "teacher", "student"].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a valid login role.",
+      });
+    }
 
     if (
       typeof email !== "string" ||
@@ -58,13 +56,12 @@ if (!["admin", "teacher", "student"].includes(role)) {
     }
 
     if (user.role !== role) {
-  return res.status(403).json({
-    success: false,
-    message: "This account does not belong to the selected role",
-  });
-}
+      return res.status(403).json({
+        success: false,
+        message: "This account does not belong to the selected role",
+      });
+    }
 
-    // A Student login must be linked to an active Student record.
     if (user.role === "student") {
       if (!user.studentProfile) {
         return res.status(403).json({

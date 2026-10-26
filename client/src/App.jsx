@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import "./App.css";
 
-const API = "http://localhost:5000";
+const API = import.meta.env.VITE_API_URL || "";
 
 const initialStats = {
   totalTeachers: 0,
@@ -12,6 +12,7 @@ const initialStats = {
   presentToday: 0,
   absentToday: 0,
   lateToday: 0,
+  classAttendance: [],
 };
 
 const adminMenuItems = [
@@ -1342,8 +1343,22 @@ if (!user) {
                   </div>
 
                   <p className="muted">
-                    Attendance marked: {stats.todayAttendance} record(s) today.
+                    Present today: {stats.presentToday} of {stats.totalStudents} students
+                    {" · "}Attendance marked: {stats.todayAttendance} record(s).
                   </p>
+                  {stats.classAttendance?.length > 0 && (
+                    <div className="class-attendance-summary">
+                      <h3>By class</h3>
+                      {stats.classAttendance.map((item) => (
+                        <p key={`${item.className}-${item.section}`}>
+                          <strong>{item.className} - {item.section}:</strong>{" "}
+                          {item.presentToday} of {item.totalStudents} present
+                          {" · "}{item.absentToday} absent
+                          {" · "}{item.lateToday} late
+                        </p>
+                      ))}
+                    </div>
+                  )}
                 </section>
               </>
             )}
@@ -1637,7 +1652,7 @@ if (!user) {
 
                     {!editingStudentId && (
                       <p className="muted">
-                        A student login account is created only if the backend supports loginPassword.
+                        A student login account is created when you set a password.
                       </p>
                     )}
 

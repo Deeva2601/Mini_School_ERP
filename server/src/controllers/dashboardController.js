@@ -27,10 +27,23 @@ const getDashboardStats = async (req, res) => {
       totalStudents,
       totalClasses,
       attendanceSummary,
+      classes,
+      studentCounts,
+      classAttendanceSummary,
     ] = await Promise.all([
       User.countDocuments({ role: "teacher" }),
       Student.countDocuments({ isActive: true }),
       Class.countDocuments({}),
+      Class.find({}).select("className section").sort({ className: 1, section: 1 }),
+      Student.aggregate([
+        { $match: { isActive: true } },
+        {
+          $group: {
+            _id: { className: "$className", section: "$section" },
+            count: { $sum: 1 },
+          },
+        },
+      ]),
       Attendance.aggregate([
         {
           $match: {
@@ -40,6 +53,23 @@ const getDashboardStats = async (req, res) => {
         {
           $group: {
             _id: "$status",
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+      Attendance.aggregate([
+        {
+          $match: {
+            date: { $gte: today, $lt: tomorrow },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              className: "$className",
+              section: "$section",
+              status: "$status",
+            },
             count: { $sum: 1 },
           },
         },
@@ -73,6 +103,43 @@ const getDashboardStats = async (req, res) => {
         ? Number(((todayAttendance / totalStudents) * 100).toFixed(1))
         : 0;
 
+    const studentCountByClass = new Map(
+      studentCounts.map((item) => [
+        `${item._id.className}::${item._id.section}`,
+        item.count,
+      ])
+    );
+    const attendanceByClass = new Map();
+
+    for (const item of classAttendanceSummary) {
+      const key = `${item._id.className}::${item._id.section}`;
+      const summaryForClass = attendanceByClass.get(key) || {
+        present: 0,
+        absent: 0,
+        late: 0,
+      };
+      summaryForClass[item._id.status] = item.count;
+      attendanceByClass.set(key, summaryForClass);
+    }
+
+    const classAttendance = classes.map((schoolClass) => {
+      const key = `${schoolClass.className}::${schoolClass.section}`;
+      const summaryForClass = attendanceByClass.get(key) || {
+        present: 0,
+        absent: 0,
+        late: 0,
+      };
+
+      return {
+        className: schoolClass.className,
+        section: schoolClass.section,
+        totalStudents: studentCountByClass.get(key) || 0,
+        presentToday: summaryForClass.present,
+        absentToday: summaryForClass.absent,
+        lateToday: summaryForClass.late,
+      };
+    });
+
     return res.status(200).json({
       success: true,
       stats: {
@@ -85,6 +152,7 @@ const getDashboardStats = async (req, res) => {
         lateToday: summary.lateToday,
         notMarkedToday,
         attendancePercentage,
+        classAttendance,
         date: dateKey,
       },
     });
