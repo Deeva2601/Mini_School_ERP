@@ -24,6 +24,22 @@ function parseDate(date) {
   return parsed;
 }
 
+function indiaDateString(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(
+    parts
+      .filter((part) => part.type !== "literal")
+      .map(({ type, value }) => [type, value])
+  );
+
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
 // Admin can access all students.
 // Teacher can access only students in their assigned classes.
 async function canAccessStudent(req, student) {
@@ -77,6 +93,13 @@ const markAttendance = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Invalid date. Use YYYY-MM-DD format",
+      });
+    }
+
+    if (req.user.role === "teacher" && date !== indiaDateString()) {
+      return res.status(400).json({
+        success: false,
+        message: "Teachers can mark attendance only for the current date",
       });
     }
 

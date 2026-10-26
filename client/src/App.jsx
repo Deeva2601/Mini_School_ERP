@@ -1762,8 +1762,14 @@ if (!user) {
             {isStudent ? (
               <section className="management-panel">
                 <div className="form-grid">
-                  <Field label="Attendance date">
-                    <input type="date" value={attendanceDate} onChange={(event) => setAttendanceDate(event.target.value)} required />
+                  <Field label={attendanceMode === "mark" ? "Attendance date (today)" : "Attendance date"}>
+                    <input
+                      type="date"
+                      value={attendanceDate}
+                      onChange={(event) => setAttendanceDate(event.target.value)}
+                      disabled={attendanceMode === "mark"}
+                      required
+                    />
                   </Field>
                 </div>
 
@@ -1820,7 +1826,10 @@ if (!user) {
                   </div>
 
                   <div className="form-actions">
-                    <button type="button" className={attendanceMode === "mark" ? "primary-button" : "secondary-button"} onClick={() => setAttendanceMode("mark")}>
+                    <button type="button" className={attendanceMode === "mark" ? "primary-button" : "secondary-button"} onClick={() => {
+                      setAttendanceDate(todayString());
+                      setAttendanceMode("mark");
+                    }}>
                       Mark attendance
                     </button>
                     <button type="button" className={attendanceMode === "history" ? "primary-button" : "secondary-button"} onClick={() => setAttendanceMode("history")}>
