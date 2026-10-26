@@ -30,13 +30,6 @@ app.use("/api/classes", classRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
-app.get("/", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Mini School ERP API is running"
-  });
-});
-
 app.get("/api/health", (req, res) => {
   res.status(200).json({
     success: true,
@@ -50,6 +43,13 @@ if (process.env.NODE_ENV === "production") {
   app.use(express.static(clientBuildPath));
   app.get(/^(?!\/api\/).*/, (req, res) => {
     res.sendFile(path.join(clientBuildPath, "index.html"));
+  });
+} else {
+  app.get("/", (req, res) => {
+    res.status(200).json({
+      success: true,
+      message: "Mini School ERP API is running"
+    });
   });
 }
 
